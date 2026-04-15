@@ -1,7 +1,7 @@
 import os
 from anthropic import AnthropicVertex
 
-MODEL_ID: str = os.getenv("CLAUDE_MODEL_ID", "claude-sonnet-4-5@20251001")
+MODEL_ID: str = os.getenv("CLAUDE_MODEL_ID", "claude-sonnet-4-6")
 MAX_TOKENS: int = 4096
 
 _SYSTEM_PROMPT = (

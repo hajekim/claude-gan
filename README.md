@@ -45,18 +45,19 @@ Add the following entry to `~/.gemini/settings.json` under `mcpServers`:
 {
   "mcpServers": {
     "claude-generator": {
-      "command": "/opt/homebrew/bin/python3",
+      "command": "/path/to/python3",
       "args": ["/absolute/path/to/claude-gan/src/mcp_server.py"],
       "env": {
         "GOOGLE_CLOUD_PROJECT": "your-gcp-project-id",
-        "GOOGLE_CLOUD_LOCATION": "global"
+        "GOOGLE_CLOUD_LOCATION": "global",
+        "PYTHONPATH": "/absolute/path/to/claude-gan"
       }
     }
   }
 }
 ```
 
-Replace `/absolute/path/to/claude-gan` with the actual path where you cloned the repository.
+Replace all `/absolute/path/to/claude-gan` with the actual path where you cloned the repository, and `/path/to/python3` with the output of `which python3`.
 
 ### 4. Add GAN Instructions to Your GEMINI.md
 

@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
+from src.tools import claude_tool
 
 
 def test_generate_initial_call_builds_correct_prompt():
@@ -59,7 +60,6 @@ def test_generate_uses_correct_model_and_max_tokens():
         mock_client.messages.create.return_value = mock_message
         mock_create_client.return_value = mock_client
 
-        from src.tools import claude_tool
         claude_tool.generate(task="t", contract="c")
 
     call_kwargs = mock_client.messages.create.call_args.kwargs
@@ -68,12 +68,8 @@ def test_generate_uses_correct_model_and_max_tokens():
 
 
 def test_create_client_requires_project_id(monkeypatch):
-    """GOOGLE_CLOUD_PROJECT가 없으면 KeyError 또는 ValueError가 발생한다."""
+    """GOOGLE_CLOUD_PROJECT가 없으면 KeyError가 발생한다."""
     monkeypatch.delenv("GOOGLE_CLOUD_PROJECT", raising=False)
 
-    import importlib
-    import src.tools.claude_tool as ct
-    importlib.reload(ct)
-
-    with pytest.raises((ValueError, KeyError)):
-        ct.create_client()
+    with pytest.raises(KeyError):
+        claude_tool.create_client()

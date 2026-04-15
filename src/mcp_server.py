@@ -2,79 +2,90 @@
 import json
 import os
 import time
+from pathlib import Path
 
+from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
 from src.tools.claude_tool import generate as _claude_generate
+
+# Anchor all relative paths to the project root regardless of cwd when invoked globally.
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+_ARTIFACTS_DIR = _PROJECT_ROOT / "artifacts"
+_STATE_FILE = _PROJECT_ROOT / "state" / "progress.json"
+
+load_dotenv(_PROJECT_ROOT / ".env")
 
 mcp = FastMCP("claude-generator")
 
 
 @mcp.tool()
 def claude_generate(task: str, contract: str, feedback: str = "") -> str:
-    """Claude 4.6 Sonnet (Vertex AI)으로 코드를 생성하거나 개선한다.
+    """Generate or refine code using Claude 4.6 Sonnet on Vertex AI.
 
     Args:
-        task: 구현할 작업 설명
-        contract: JSON 형식의 Sprint Contract (definition_of_done 포함)
-        feedback: Evaluator의 피드백 (재시도 시 제공, 최초 호출 시 생략)
+        task: Description of the implementation task.
+        contract: Sprint Contract as a JSON string (must include definition_of_done).
+        feedback: Evaluator feedback from a previous iteration. Omit on first call.
     """
     return _claude_generate(task=task, contract=contract, feedback=feedback)
 
 
 @mcp.tool()
 def save_artifact(content: str, filename: str) -> str:
-    """결과물을 artifacts/ 디렉토리에 저장한다.
+    """Save generated output to the artifacts/ directory.
 
     Args:
-        content: 저장할 내용 (코드, 텍스트 등)
-        filename: 저장할 파일명 (예: 'final_solution.py')
+        content: The content to save (code, text, etc.).
+        filename: File name only — no path separators allowed (e.g. 'solution.py').
 
     Returns:
-        저장된 파일의 경로
+        Absolute path of the saved file.
     """
-    os.makedirs("artifacts", exist_ok=True)
-    path = os.path.join("artifacts", filename)
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(content)
-    return path
+    # Guard against path traversal: filename must be a plain name with no directory components.
+    safe_name = Path(filename).name
+    if safe_name != filename or not safe_name:
+        raise ValueError(f"Invalid filename '{filename}': must be a plain file name with no path separators.")
+
+    _ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
+    path = _ARTIFACTS_DIR / safe_name
+    path.write_text(content, encoding="utf-8")
+    return str(path)
 
 
 @mcp.tool()
 def load_progress() -> str:
-    """state/progress.json에서 현재 스프린트 진행 상태를 로드한다.
+    """Load the current sprint state from state/progress.json.
 
     Returns:
-        JSON 문자열 (파일 없으면 빈 객체 '{}')
+        JSON string of the current state, or '{}' if no state file exists yet.
     """
     try:
-        with open("state/progress.json", encoding="utf-8") as f:
-            return json.dumps(json.load(f), ensure_ascii=False)
+        return json.dumps(json.loads(_STATE_FILE.read_text(encoding="utf-8")), ensure_ascii=False)
     except FileNotFoundError:
         return "{}"
 
 
 @mcp.tool()
 def save_progress(sprint_id: str, status: str, grade: str = "") -> str:
-    """현재 스프린트 상태를 state/progress.json에 저장한다.
+    """Persist the current sprint status to state/progress.json.
 
     Args:
-        sprint_id: 스프린트 식별자 (예: 'SPRINT-001')
-        status: 현재 상태 ('IN_PROGRESS', 'SUCCESS', 'PARTIAL_SUCCESS')
-        grade: Evaluator 평가 등급 ('A', 'B', 'C')
+        sprint_id: Sprint identifier (e.g. 'SPRINT-001').
+        status: One of 'IN_PROGRESS', 'SUCCESS', or 'PARTIAL_SUCCESS'.
+        grade: Evaluator grade ('A', 'B', or 'C').
 
     Returns:
-        저장 결과 메시지
+        Confirmation message.
     """
-    os.makedirs("state", exist_ok=True)
+    _STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
     state = {
         "sprint_id": sprint_id,
         "status": status,
         "grade": grade,
         "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
-    with open("state/progress.json", "w", encoding="utf-8") as f:
-        json.dump(state, f, indent=2, ensure_ascii=False)
+    _STATE_FILE.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
     return f"Progress saved: {sprint_id} → {status} (Grade: {grade or 'N/A'})"
 
 

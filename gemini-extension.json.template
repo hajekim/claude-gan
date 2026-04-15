@@ -1,0 +1,17 @@
+{
+  "name": "claude-gan",
+  "version": "2.0.0",
+  "description": "GAN-inspired coding loop: Gemini as Evaluator, Claude (Vertex AI) as Generator via MCP",
+  "contextFileName": "GEMINI.md",
+  "mcpServers": {
+    "claude-generator": {
+      "command": "/path/to/python3",
+      "args": ["/absolute/path/to/claude-gan/src/mcp_server.py"],
+      "env": {
+        "GOOGLE_CLOUD_PROJECT": "YOUR_GCP_PROJECT_ID",
+        "GOOGLE_CLOUD_LOCATION": "global",
+        "PYTHONPATH": "/absolute/path/to/claude-gan"
+      }
+    }
+  }
+}

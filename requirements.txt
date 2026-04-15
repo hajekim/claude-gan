@@ -1,5 +1,4 @@
 anthropic[vertex]>=0.94.0
-google-genai>=1.0.0
 mcp[cli]>=1.0.0
 python-dotenv>=1.0.0
 pytest>=8.0.0

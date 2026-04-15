@@ -10,8 +10,17 @@ env/
 
 # Project specific
 state/progress.json
-artifacts/
+artifacts/*
+!artifacts/.gitkeep
 *.log
+
+# Machine-specific extension config (copy from gemini-extension.json.template)
+gemini-extension.json
+
+# Internal tooling
+.remember/
+.claude/
+docs/superpowers/
 
 # OS
 .DS_Store
