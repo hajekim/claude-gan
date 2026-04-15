@@ -27,7 +27,7 @@ Gemini CLI's built-in Gemini model IS the Evaluator. Claude is a callable MCP to
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-repo/claude-gan.git
+git clone https://github.com/hajekim/claude-gan.git
 cd claude-gan
 ```
 
