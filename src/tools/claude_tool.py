@@ -1,8 +1,9 @@
+import json
 import os
 from anthropic import AnthropicVertex
 
 MODEL_ID: str = os.getenv("CLAUDE_MODEL_ID", "claude-sonnet-4-6")
-MAX_TOKENS: int = 4096
+MAX_TOKENS: int = int(os.getenv("CLAUDE_MAX_TOKENS", "8192"))
 
 _SYSTEM_PROMPT = (
     "You are a senior software engineer. "
@@ -26,8 +27,13 @@ def generate(task: str, contract: str, feedback: str = "") -> str:
         feedback: Evaluator의 이전 피드백 (최초 호출 시 빈 문자열)
 
     Returns:
-        Claude가 생성한 코드 문자열
+        Claude가 생성한 코드 문자열. 응답이 잘린 경우 WARNING 접미사 포함.
     """
+    try:
+        json.loads(contract)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"contract must be valid JSON: {e}") from e
+
     client = create_client()
     prompt = _build_prompt(task, contract, feedback)
 
@@ -37,7 +43,24 @@ def generate(task: str, contract: str, feedback: str = "") -> str:
         system=_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": prompt}],
     )
-    return message.content[0].text
+    text = _extract_text(message.content)
+    if message.stop_reason == "max_tokens":
+        text += "\n\n# WARNING: Response was truncated due to max_tokens limit."
+    return text
+
+
+def _extract_text(content: list) -> str:
+    """content block 목록에서 텍스트를 안전하게 추출한다.
+
+    TextBlock만 수집하며, 복수의 블록은 이어붙여 반환한다.
+
+    Raises:
+        ValueError: 텍스트 블록이 하나도 없을 때
+    """
+    parts = [block.text for block in content if hasattr(block, "text")]
+    if not parts:
+        raise ValueError("No text content in Claude response.")
+    return "".join(parts)
 
 
 def _build_prompt(task: str, contract: str, feedback: str) -> str:

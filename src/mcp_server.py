@@ -16,7 +16,7 @@ _STATE_FILE = _PROJECT_ROOT / "state" / "progress.json"
 
 load_dotenv(_PROJECT_ROOT / ".env")
 
-mcp = FastMCP("claude-generator")
+mcp = FastMCP("claude-gan")
 
 
 @mcp.tool()
