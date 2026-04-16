@@ -4,7 +4,7 @@
   "description": "GAN-inspired coding loop: Gemini as Evaluator, Claude (Vertex AI) as Generator via MCP",
   "contextFileName": "GEMINI.md",
   "mcpServers": {
-    "claude-generator": {
+    "claude-gan": {
       "command": "/path/to/python3",
       "args": ["/absolute/path/to/claude-gan/src/mcp_server.py"],
       "env": {
