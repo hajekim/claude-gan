@@ -70,7 +70,8 @@ pip install -r requirements.txt
 ```
 - **claude-gan**: Code generation via GAN loop. Use `claude_generate(task, contract, feedback)`
   to delegate implementation to Claude 4.6 Sonnet (Vertex AI).
-  Also provides `save_artifact(content, filename)` and `save_progress(sprint_id, status, grade)`.
+  Also provides `save_artifact(content, filename)` and
+  `save_progress(sprint_id, status, grade, input_tokens, output_tokens)`.
 ```
 
 **실행 워크플로우(ACT 단계 또는 GAN 루프 섹션)에 추가:**
@@ -80,9 +81,11 @@ For code generation tasks, delegate to Claude via the claude-gan MCP instead of
 writing code directly:
 1. Write a Sprint Contract (JSON DoD) based on the task.
 2. Call claude_generate(task, contract, feedback="") to get Claude's implementation.
+   The response ends with "# USAGE: input_tokens=X, output_tokens=Y" — note these values.
 3. Evaluate the result as the Skeptical Judge (Gemini = Evaluator).
 4. If Grade B/C, call claude_generate again with specific feedback. Repeat up to 3 times.
-5. On Grade A, call save_artifact and save_progress to persist the result.
+5. On Grade A, call save_artifact to save the code, then call
+   save_progress(sprint_id, status, grade, input_tokens=X, output_tokens=Y) with the token counts.
 For non-generation tasks (surgical patches, config changes), implement directly.
 ```
 
@@ -140,7 +143,7 @@ Gemini가 자동으로:
 | 파일 | 설명 |
 |------|------|
 | `artifacts/solution_SPRINT-XXX.py` | 최종 생성 코드 |
-| `state/progress.json` | 스프린트 상태 및 등급 |
+| `state/progress.json` | 스프린트 상태, 등급, 토큰 사용량 |
 
 ## 등록된 MCP 도구
 
@@ -151,7 +154,7 @@ Gemini가 자동으로:
 | `claude_generate(task, contract, feedback)` | Claude 4.6 Sonnet (Vertex AI)으로 코드 생성/개선 |
 | `save_artifact(content, filename)` | `artifacts/` 디렉토리에 결과물 저장 |
 | `load_progress()` | `state/progress.json`에서 현재 스프린트 상태 로드 |
-| `save_progress(sprint_id, status, grade)` | 스프린트 상태 저장 |
+| `save_progress(sprint_id, status, grade, input_tokens=0, output_tokens=0)` | 스프린트 상태 및 토큰 사용량 저장 |
 
 ## 프로젝트 구조
 
@@ -166,7 +169,6 @@ claude-gan/
 ├── state/
 │   └── progress.json                # 스프린트 상태 (런타임, gitignored)
 ├── artifacts/                       # 생성 코드 출력 (런타임, gitignored)
-├── GEMINI.md                        # Gemini CLI용 Evaluator 지시문
 ├── gemini-extension.json.template   # Extension 매니페스트 템플릿 (경로 직접 기입)
 └── requirements.txt
 ```

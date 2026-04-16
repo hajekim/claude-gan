@@ -68,7 +68,8 @@ Add the following two snippets to your existing `~/.gemini/GEMINI.md`. Do **not*
 ```
 - **claude-gan**: Code generation via GAN loop. Use `claude_generate(task, contract, feedback)`
   to delegate implementation to Claude 4.6 Sonnet (Vertex AI).
-  Also provides `save_artifact(content, filename)` and `save_progress(sprint_id, status, grade)`.
+  Also provides `save_artifact(content, filename)` and
+  `save_progress(sprint_id, status, grade, input_tokens, output_tokens)`.
 ```
 
 **In your execution workflow** (e.g. inside an ACT or GAN-Inspired Loop section), add:
@@ -78,9 +79,11 @@ For code generation tasks, delegate to Claude via the claude-gan MCP instead of
 writing code directly:
 1. Write a Sprint Contract (JSON DoD) based on the task.
 2. Call claude_generate(task, contract, feedback="") to get Claude's implementation.
+   The response ends with "# USAGE: input_tokens=X, output_tokens=Y" — note these values.
 3. Evaluate the result as the Skeptical Judge (Gemini = Evaluator).
 4. If Grade B/C, call claude_generate again with specific feedback. Repeat up to 3 times.
-5. On Grade A, call save_artifact and save_progress to persist the result.
+5. On Grade A, call save_artifact to save the code, then call
+   save_progress(sprint_id, status, grade, input_tokens=X, output_tokens=Y) with the token counts.
 For non-generation tasks (surgical patches, config changes), implement directly.
 ```
 
@@ -134,7 +137,7 @@ Implement a Python calculator with add, subtract, multiply, divide and unit test
 | File | Description |
 |------|-------------|
 | `artifacts/solution_SPRINT-XXX.py` | Final generated code |
-| `state/progress.json` | Sprint status and grade |
+| `state/progress.json` | Sprint status, grade, and token usage |
 
 ## Available MCP Tools
 
@@ -145,7 +148,7 @@ These tools are registered globally and available in all Gemini CLI sessions:
 | `claude_generate(task, contract, feedback="")` | Calls Claude 4.6 Sonnet (Vertex AI) to generate or refine code |
 | `save_artifact(content, filename)` | Saves output to `artifacts/` directory |
 | `load_progress()` | Reads current sprint state from `state/progress.json` |
-| `save_progress(sprint_id, status, grade)` | Persists sprint state |
+| `save_progress(sprint_id, status, grade, input_tokens=0, output_tokens=0)` | Persists sprint state and token usage |
 
 ## Project Structure
 
@@ -160,7 +163,6 @@ claude-gan/
 ├── state/
 │   └── progress.json                # Sprint state (runtime, gitignored)
 ├── artifacts/                       # Generated code outputs (runtime, gitignored)
-├── GEMINI.md                        # Evaluator instructions for Gemini CLI
 ├── gemini-extension.json.template   # Extension manifest template (copy and fill in paths)
 └── requirements.txt
 ```
